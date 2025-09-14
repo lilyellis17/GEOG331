@@ -33,7 +33,7 @@ Mat.bycol[,2]
 # TODO Change the following line
 #datW <- read.csv("Z:\\lmellis\\Data\\noaa_weather\\2011124.csv",
 #                 stringsAsFactors = T)
-datW <- read.csv("C:\\Users\\lilye\\Desktop\\GEOG 331\\noaa_weather\\2011124.csv")
+datW <- read.csv("C:\\Users\\lilye\\Desktop\\GEOG 331\\noaa_weather\\2011124.csv", stringsAsFactors = T )
 #get more information about the dataframe
 str(datW)
 
