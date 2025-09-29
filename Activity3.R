@@ -170,7 +170,7 @@ end_date   <- max(dates, na.rm = TRUE)
 #TODO double check the sensor round (estimated right now)
 research_table <- data.frame(
   Variable = c("Average Air Temp", "Average Wind Speed", "Average Soil Moisture", "Average Soil Temp", "Total Precipitation"),
-  Measurement = c(round(avg_air_temp, 1), round(avg_wind_speed, 1), round(avg_soil_moisture, 3), round(avg_soil_temp, 1), round(sum_precip, 1)),
+  Measurement = c(round(avg_air_temp, 1), round(avg_wind_speed, 1), round(avg_soil_moisture, 2), round(avg_soil_temp, 1), round(sum_precip, 2)),
   Number_Of_Observations = c(count_air_temp, count_wind_speed, count_soil_moisture, count_soil_temp, count_precip)
 )
 print(research_table)
