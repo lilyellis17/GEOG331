@@ -1,8 +1,5 @@
 #PACKAGES
-#use install.packages to install lubridate
 #install.packages(c("lubridate"))
-#it is helpful to comment this line after you run this line of code on the computer
-#and the package installs. You really don't want to do this over and over again.
 
 #Load package
 library(lubridate)
@@ -15,7 +12,6 @@ assert <- function(statement,err.message){
   
 }
 
-#check how the statement works
 #evaluate a false statement
 assert(1 == 2, "error: unequal values")
 
@@ -101,10 +97,12 @@ datW[datW$air.tempQ1 > 33,]
 #plot precipitation and lightning strikes on the same plot
 #normalize lighting strikes to match precipitation
 lightscale <- (max(datW$precipitation)/max(datW$lightning.acvitivy)) * datW$lightning.acvitivy
+
 #make the plot with precipitation and lightning activity marked
 #make it empty to start and add in features
 plot(datW$DD , datW$precipitation, xlab = "Day of Year", ylab = "Precipitation & lightning",
      type="n")
+
 #plot precipitation points only when there is precipitation 
 #make the points semi-transparent
 points(datW$DD[datW$precipitation > 0], datW$precipitation[datW$precipitation > 0],
@@ -118,12 +116,12 @@ points(datW$DD[lightscale > 0], lightscale[lightscale > 0],
 assert(nrow(datW) == length(lightscale), "error: unequal length")
 
 #filter out storms in wind and air temperature measurements
-# filter all values with lightning that coincides with rainfall greater than 2mm or only rainfall over 5 mm.    
+#filter all values with lightning that coincides with rainfall greater than 2mm or only rainfall over 5 mm.    
 #create a new air temp column
 datW$air.tempQ2 <- ifelse(datW$precipitation  >= 2 & datW$lightning.acvitivy >0, NA,
                           ifelse(datW$precipitation > 5, NA, datW$air.tempQ1))
 
-# Question 6
+# QUESTION 6
 datW$wind.speedQ1 <- ifelse(datW$precipitation  >= 2 & datW$lightning.acvitivy >0, NA,
                             ifelse(datW$precipitation > 5, NA, datW$wind.speed))
 
@@ -132,7 +130,7 @@ assert(all(is.na(datW$wind.speedQ1[datW$precipitation > 5])), "error: precipitat
 
 plot(datW$DD, datW$wind.speedQ1, pch=19, type = "b", xlab = "Day of Year", ylab = "Wind Speed (Filtered)")
 
-# Question 7
+# QUESTION 7
 #adding a month column
 datW$month<- month(dates)
 july_data <- subset(datW, month ==7)
@@ -146,7 +144,7 @@ plot(july_data$DD, july_data$air.tempQ2, pch=19, type="b", xlab="Day of Year", y
 #reset the plotting layout
 par(mfrow = c(1, 1))
 
-# Question 8
+# QUESTION 8
 #Getting all averages
 avg_air_temp <- mean(datW$air.tempQ2, na.rm = TRUE)
 avg_wind_speed <- mean(datW$wind.speedQ1, na.rm = TRUE)
@@ -167,7 +165,6 @@ count_precip <- sum(!is.na(datW$precipitation))
 start_date <- min(dates, na.rm = TRUE)
 end_date   <- max(dates, na.rm = TRUE)
 
-#TODO double check the sensor round (estimated right now)
 research_table <- data.frame(
   Variable = c("Average Air Temp", "Average Wind Speed", "Average Soil Moisture", "Average Soil Temp", "Total Precipitation"),
   Measurement = c(round(avg_air_temp, 1), round(avg_wind_speed, 1), round(avg_soil_moisture, 2), round(avg_soil_temp, 1), round(sum_precip, 2)),
@@ -177,7 +174,7 @@ print(research_table)
 cat("\nTime Period of Measurements:", format(start_date, "%Y-%m-%d %H:%M"),
     "to", format(end_date, "%Y-%m-%d %H:%M"), "\n")
 
-# Question 9
+# QUESTION 9
 par(mfrow=c(2,2))
 plot(datW$DD, datW$soil.moisture, pch=19, type="b", xlab="Day of Year", ylab="Soil Moisture")
 plot(datW$DD, datW$soil.temp, pch=19, type="b", xlab="Day of Year", ylab="Soil Temperature")
