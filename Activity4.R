@@ -3,7 +3,7 @@
 head(iris)
 #load in some tidyverse packages
 library(tidyverse)
-
+rm(list = ls())
 #####################################
 ##### Part 1: for loops         #####
 #####################################
@@ -17,13 +17,19 @@ library(tidyverse)
 #3. iris sepal length x petal length
 
 # hint: consider using a list, and also new vectors for regression variables
+flower <- iris[iris$Species == "virginica",]
 regression_list <- list(flower$Sepal.Length ~ flower$Sepal.Width, 
                         flower$Petal.Length ~ flower$Petal.Width, 
                         flower$Sepal.Length ~ flower$Petal.Length)
+fit <- list()
+summaries <- list()
+count <- 0
 for(item in regression_list){
-  fit <- lm(item)
+  count <- count + 1
+  fit[[count]] <- lm(item)
+  summaries[[count]] <- summary(fit[[count]])
 }
-
+print(summaries)
 
 #####################################
 ##### Part 2: data in dplyr     #####
