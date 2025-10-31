@@ -1,5 +1,5 @@
 #load in lubridate
-library(lubridate)
+#library(lubridate)
 
 #read in streamflow data
 datH <- read.csv("Z:\\lmellis\\Data\\hw5_data\\stream_flow_data.csv",
