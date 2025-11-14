@@ -52,7 +52,7 @@ datP$decYear <- ifelse(leap_year(datP$year),datP$year + (datP$decDay/366),
 plot(datD$decYear, datD$discharge, type="l", xlab="Year", ylab=expression(paste("Discharge ft"^"3 ","sec"^"-1")))
 
 #QUESTION 3
-#Getting infor for streamflow data
+#Getting info for streamflow data
 str(datH)
 colnames(datH)
 
