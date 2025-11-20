@@ -9,9 +9,9 @@ f <- list.files("C:\\users\\lilye\\OneDrive\\Documents\\GEOG331\\FinalProject\\d
 
 f
 
-yangambi_center <- c(24.45, 0.81)
+yangambi_center <-c(24.45, 0.81)
 
-extent_yangambi <- ext(
+yangambi_region <- ext(
   yangambi_center[1] - 0.25,  # xmin
   yangambi_center[1] + 0.25,  # xmax
   yangambi_center[2] - 0.25,  # ymin
@@ -20,14 +20,20 @@ extent_yangambi <- ext(
 
 #forest loss raster
 lossyear <- rast(f[grep("lossyear", f)])
-#cut raster to yangambi area
-lossyear_y <- crop(lossyear, extent_yangambi)
+
+lossyear_crop <- crop(lossyear, yangambi_region)
+
+
+#Changing from lat/long to meters system
+crs_utm <- "EPSG:32635"
+lossyear_utm <- project(lossyear_crop, crs_utm, method = "near")
+lossyear_int <- round(lossyear_utm)
 
 #pixel area (in km^2)
-loss_area_km2 <- cellSize(lossyear_y, unit = "km")
+loss_area_km2 <- cellSize(lossyear_utm, unit = "km")
 
 #total forest loss per loss code (0–24) (year)
-zonal_loss <- zonal(loss_area_km2, lossyear_y, fun = "sum", na.rm = TRUE)
+zonal_loss <- zonal(loss_area_km2, lossyear_int, fun = "sum", na.rm = TRUE)
 
 #df
 loss_df <- as.data.frame(zonal_loss)
@@ -42,25 +48,36 @@ loss_df$year <- 2000 + loss_df$loss_code
 #sort by year column
 loss_df <- loss_df[order(loss_df$year), ]
 
+
 #annual forest loss graph
-ggplot(loss_df[loss_df$year>=2001 & loss_df$year<=2019,], aes(x = year, y = area_km2)) +
+ggplot(loss_df[loss_df$year >= 2001 & loss_df$year <= 2019,],
+       aes(x = year, y = area_km2)) +
   geom_col(fill = "darkgreen") +
   theme_minimal() +
   labs(
     title = "Annual Forest Loss in Yangambi Region (2001–2019)",
     x = "Year",
-    y = "Forest Area Lost (Km^2)"
+    y = "Forest Area Lost (km²)"
   )
 
-#forest loss by year
-cols <- c("gray", hcl.colors(24, "Inferno", rev = TRUE))
-plot(
-  lossyear_y,
-  col = cols,
-  breaks = 0:24,
-  main = "Forest Loss Year (2001–2024) - Yangambi",
-  legend = TRUE,
-  axes = TRUE
-)
+#raster of deforestation occurring in any year rather than by year
+loss_binary <- classify(lossyear_utm, rbind(
+  c(0, 0, 0), 
+  c(1, 24, 1)
+))
 
-loss_df
+#forest loss
+cols <- c("darkgreen", "white")
+
+plot(
+  loss_binary,
+  col = cols,
+  legend = FALSE,
+  axes = TRUE,
+  main = "Deforestation 2000-2024 in Yangambi",
+)
+legend("right",
+       legend = c("No Loss", "Forest Loss"),
+       fill = c("darkgreen", "white"),
+       border = "black",
+       bty = "n")
