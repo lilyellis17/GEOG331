@@ -61,20 +61,21 @@ ggplot(loss_df[loss_df$year >= 2001 & loss_df$year <= 2019,],
   )
 
 #raster of deforestation occurring in any year rather than by year
-loss_binary <- classify(lossyear_utm, rbind(
-  c(0, 0, 0), 
-  c(1, 24, 1)
+# forest loss raster for 2001-2019 only
+loss_binary_2001_2019 <- classify(lossyear_utm, rbind(
+  c(0, 0, 0),    # no loss
+  c(1, 19, 1),   # loss from 2001 to 2019
+  c(20, 24, 0)   # ignore losses after 2019
 ))
 
 #forest loss
 cols <- c("darkgreen", "white")
-
 plot(
   loss_binary,
   col = cols,
   legend = FALSE,
   axes = TRUE,
-  main = "Deforestation 2000-2024 in Yangambi",
+  main = "Deforestation 2001-2019 in Yangambi",
 )
 legend("right",
        legend = c("No Loss", "Forest Loss"),
