@@ -1,7 +1,5 @@
 library(dplyr)
-library(ggplot2)
 library(readxl)
-
 library(terra)
 library(tidyterra)
 
@@ -23,7 +21,7 @@ lossyear <- rast(f[grep("lossyear", f)])
 lossyear_crop <- crop(lossyear, yangambi_region)
 
 
-#Changing from lat/long to meters system
+#changing from lat/long to meters system
 crs_utm <- "EPSG:32635"
 lossyear_utm <- project(lossyear_crop, crs_utm, method = "near")
 lossyear_int <- round(lossyear_utm)
@@ -50,18 +48,18 @@ datH <- read_excel("C:\\users\\lilye\\OneDrive\\Documents\\GEOG331\\FinalProject
 
 datH$Date <- as.Date(with(datH, paste(Year, Month, day, sep = "-")), "%Y-%m-%d")
 
-# Filter for years used in forest-loss analysis
+#Filter for years used in forest-loss analysis
 datYearFiltered <- datH %>%
-  filter(Year >= 2000 & Year <= 2019)
+  filter(Year >= 2000 & Year <= 2020)
 
-#seasons for dry and wet
+#assign seasons
 dat_season <- datYearFiltered %>%
   mutate(Season = case_when(
     Month %in% c(12, 1, 2) ~ "Dec–Feb",
     Month %in% 3:11 ~ "Mar–Nov"
   ))
 
-#make December count toward next year's season so you get a full consistent dry season
+#make December count toward next year's season
 dat_season <- dat_season %>%
   mutate(Season_Year = ifelse(Month == 12, Year + 1, Year))
 
@@ -69,7 +67,7 @@ dat_season <- dat_season %>%
 seasonal_precip <- dat_season %>%
   group_by(Season_Year, Season) %>%
   summarise(total_precip = sum(Pm, na.rm = TRUE), .groups = "drop") %>%
-  filter(Season_Year <= 2019)
+  filter(Season_Year <= 2020)
 
 #extract dry-season rainfall only
 dry_precip <- seasonal_precip %>%
@@ -80,35 +78,40 @@ dry_precip <- seasonal_precip %>%
 #merge datasets
 regression_df <- merge(loss_df_annual, dry_precip, by = "year")
 
+regression_df <- regression_df %>%
+  arrange(year) %>%
+  mutate(loss_lag2 = dplyr::lag(area_km2, n = 2))
+
+regression_df <- regression_df %>% 
+  filter(!is.na(loss_lag2))
+
 #regression analysis
-fit <- lm(total_precip ~ area_km2, data = regression_df)
-summary(fit)
+fit_lag2 <- lm(total_precip ~ loss_lag2, data = regression_df)
+summary(fit_lag2)
 
 #scatterplot of rain and forest loss
-plot(regression_df$area_km2, regression_df$total_precip, pch = 19,
-     xlab = "Forest Loss (km²)",
+plot(regression_df$loss_lag2, regression_df$total_precip, pch = 19,
+     xlab = "Forest Loss (km²), 2 Year Lag",
      ylab = "Dry Season Precipitation (mm)",
-     main = "Dry-Season Rainfall vs. Forest Loss")
-abline(fit, col = "red", lwd = 2)
+     main = "Dry-Season Rainfall vs. 2 year Forest Loss Lag")
+abline(fit_lag2, col = "red", lwd = 2)
 
 
 #residual plot
-plot(regression_df$area_km2, summary(fit)$residuals, pch = 19,
-     xlab = "Forest Loss (km²)",
+plot(regression_df$loss_lag2, residuals(fit_lag2), pch = 19,
+     xlab = "Forest Loss (km²), 2 Year Lag",
      ylab = "Residuals",
      main = "Residual Plot")
 abline(h = 0)
 
 #residual histogram
-hist(summary(fit)$residuals, col = "purple",
+hist(summary(fit_lag2)$residuals, col = "purple",
      main = "Residual Distribution",
      xlab = "Residuals")
 
 #QQ plot
-qqnorm(summary(fit)$residuals, pch = 19)
-qqline(summary(fit)$residuals)
+qqnorm(summary(fit_lag2)$residuals, pch = 19)
+qqline(summary(fit_lag2)$residuals)
 
 #Shapiro-Wilk test
-shapiro.test(summary(fit)$residuals)
-
-summary(fit)
+shapiro.test(summary(fit_lag2)$residuals)
