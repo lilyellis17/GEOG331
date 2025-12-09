@@ -1,6 +1,6 @@
-install.packages("terra")
-install.packages("tidyterra")
-install.packages("ggplot2")
+#install.packages("terra")
+#install.packages("tidyterra")
+#install.packages("ggplot2")
 library(ggplot2)   
 library(terra)
 library(tidyterra)
@@ -10,28 +10,39 @@ f <- list.files("C:\\users\\lilye\\OneDrive\\Documents\\GEOG331\\FinalProject\\d
 f
 
 #Crop the region
-yangambi_center <-c(24.45, 0.81)
+center <- vect("POINT(24.45 0.81)", crs="EPSG:4326")
+center_utm <- project(center, "EPSG:32635")
+
+#Extract numeric coordinates (meters)
+cx <- crds(center_utm)[1]
+cy <- crds(center_utm)[2]
+
+#30 km radius
+radius <- 30000
 
 yangambi_region <- ext(
-  yangambi_center[1] - 0.25,
-  yangambi_center[1] + 0.25,
-  yangambi_center[2] - 0.25,
-  yangambi_center[2] + 0.25
+  cx - radius,
+  cx + radius,
+  cy - radius,
+  cy + radius
 )
+
 
 #forest loss raster
 lossyear <- rast(f[grep("lossyear", f)])
 
-lossyear_crop <- crop(lossyear, yangambi_region)
 
-
-#Changing from lat/long to meters system
+#project raster
 crs_utm <- "EPSG:32635"
-lossyear_utm <- project(lossyear_crop, crs_utm, method = "near")
-lossyear_int <- round(lossyear_utm)
+lossyear_utm <- project(lossyear, crs_utm, method="near")
+
+#crop using the UTM extent
+lossyear_crop <- crop(lossyear_utm, yangambi_region)
+
+lossyear_int <- round(lossyear_crop)
 
 #pixel area (in km^2)
-loss_area_km2 <- cellSize(lossyear_utm, unit = "km")
+loss_area_km2 <- cellSize(lossyear_crop, unit = "km")
 
 #total forest loss per loss code (0–24) (year)
 zonal_loss <- zonal(loss_area_km2, lossyear_int, fun = "sum", na.rm = TRUE)
@@ -64,15 +75,18 @@ ggplot(loss_df[loss_df$year >= 2001 & loss_df$year <= 2019,],
 
 #raster of deforestation occurring in any year rather than by year
 # forest loss raster for 2001-2019 only
-loss_binary_2001_2019 <- classify(lossyear_utm, rbind(
+loss_binary_2001_2019 <- classify(lossyear_crop, rbind(
   c(0, 0, 0),    #no loss
   c(1, 19, 1),   #loss from 2001 to 2019
   c(20, 24, 0)   #ignore losses after 2019
 ))
 
-rivers <- vect(f[grep("rivers", f)])
+rivers <- vect("C:/users/lilye/OneDrive/Documents/GEOG331/FinalProject/data/rwdb_rivers/rwdb_riv.shp")
 crs(rivers) <- "EPSG:4326"
-rivers_utm <- project(rivers, crs_utm)
+rivers_utm <- project(rivers, "EPSG:32635")
+
+# crop in UTM (this was missing before!)
+rivers_crop <- crop(rivers_utm, yangambi_region)
 
 loss_binary_factor <- as.factor(loss_binary_2001_2019)
 
@@ -94,8 +108,9 @@ ggplot() +
     y = "Northing (km)"
   ) +
   coord_sf(
-    xlim = c(xmin(loss_binary_2001_2019), xmax(loss_binary_2001_2019)),
-    ylim = c(ymin(loss_binary_2001_2019), ymax(loss_binary_2001_2019))
+    xlim = c(xmin(yangambi_region), xmax(yangambi_region)),
+    ylim = c(ymin(yangambi_region), ymax(yangambi_region)),
+    expand = FALSE
   ) +
   scale_x_continuous(labels = function(x) x / 1000) +
   scale_y_continuous(labels = function(y) y / 1000) +
@@ -141,3 +156,4 @@ qqline(residuals(fit_loss))
 
 #Shapiro wilk test
 shapiro.test(residuals(fit_loss))
+
