@@ -1,48 +1,36 @@
 #install.packages("terra")
-#install.packages("tidyterra")
 #install.packages("ggplot2")
 library(ggplot2)   
 library(terra)
-library(tidyterra)
+library(dplyr)
 
 f <- list.files("C:\\users\\lilye\\OneDrive\\Documents\\GEOG331\\FinalProject\\data", full.names = T)
 
-f
+#yangambi coordinates
+yangambi_center <-c(24.45, 0.81)
 
-#Crop the region
-center <- vect("POINT(24.45 0.81)", crs="EPSG:4326")
-center_utm <- project(center, "EPSG:32635")
-
-#Extract numeric coordinates (meters)
-cx <- crds(center_utm)[1]
-cy <- crds(center_utm)[2]
-
-#30 km radius
-radius <- 30000
-
+#Region around coordinates
 yangambi_region <- ext(
-  cx - radius,
-  cx + radius,
-  cy - radius,
-  cy + radius
+  yangambi_center[1] - 0.25,
+  yangambi_center[1] + 0.25,
+  yangambi_center[2] - 0.25,
+  yangambi_center[2] + 0.25
 )
-
 
 #forest loss raster
 lossyear <- rast(f[grep("lossyear", f)])
+lossyear_crop <- crop(lossyear, yangambi_region)
 
 
-#project raster
+#changing from lat/long
 crs_utm <- "EPSG:32635"
-lossyear_utm <- project(lossyear, crs_utm, method="near")
+lossyear_utm <- project(lossyear_crop, crs_utm, method = "near")
+lossyear_int <- round(lossyear_utm)
 
-#crop using the UTM extent
-lossyear_crop <- crop(lossyear_utm, yangambi_region)
-
-lossyear_int <- round(lossyear_crop)
 
 #pixel area (in km^2)
-loss_area_km2 <- cellSize(lossyear_crop, unit = "km")
+loss_area_km2 <- cellSize(lossyear_utm, unit = "km")
+
 
 #total forest loss per loss code (0–24) (year)
 zonal_loss <- zonal(loss_area_km2, lossyear_int, fun = "sum", na.rm = TRUE)
@@ -83,42 +71,33 @@ loss_binary_2001_2019 <- classify(lossyear_crop, rbind(
 
 rivers <- vect("C:/users/lilye/OneDrive/Documents/GEOG331/FinalProject/data/rwdb_rivers/rwdb_riv.shp")
 crs(rivers) <- "EPSG:4326"
-rivers_utm <- project(rivers, "EPSG:32635")
+rivers_crop_ll <- crop(rivers, yangambi_region) # both EPSG:4326
+rivers_crop <- project(rivers_crop_ll, "EPSG:32635")
 
-# crop in UTM (this was missing before!)
-rivers_crop <- crop(rivers_utm, yangambi_region)
+loss_binary_utm <- project(loss_binary_2001_2019, "EPSG:32635", method = "near")
+loss_binary_factor <- as.factor(loss_binary_utm)
 
-loss_binary_factor <- as.factor(loss_binary_2001_2019)
+par(mar = c(5, 4, 4, 5)) #right margin
 
-ggplot() +
-  geom_spatraster(data = loss_binary_factor) +
-  scale_fill_manual(
-    values = c("0" = "darkgreen", "1" = "white"),
-    labels = c("No Loss", "Forest Loss"),
-    name = "Forest Loss",
-    guide = guide_legend(
-      override.aes = list(color = "black")  # add black box around legend keys
-    )
-  ) +
-  geom_spatvector(data = rivers_crop, color = "blue", size = 1, show.legend = FALSE) +  # no legend
-  theme_minimal() +
-  labs(
-    title = "Deforestation 2001-2019 in Yangambi",
-    x = "Easting (km)",
-    y = "Northing (km)"
-  ) +
-  coord_sf(
-    xlim = c(xmin(yangambi_region), xmax(yangambi_region)),
-    ylim = c(ymin(yangambi_region), ymax(yangambi_region)),
-    expand = FALSE
-  ) +
-  scale_x_continuous(labels = function(x) x / 1000) +
-  scale_y_continuous(labels = function(y) y / 1000) +
-  theme(
-    legend.position = "right",
-    legend.title = element_text(size = 12),
-    legend.text = element_text(size = 10)
-  )
+#plot raster
+plot(loss_binary_utm, col = c("darkgreen", "white"), legend = FALSE)
+
+#add rivers on top
+lines(rivers_crop, col = "blue", lwd = 2)
+
+#legend
+legend(
+  "right",
+  inset = c(-0.10, 0),
+  legend = c("No Loss", "Forest Loss", "Rivers"),
+  fill   = c("darkgreen", "white", NA),
+  border = c("black", "black", NA),
+  lwd    = c(NA, NA, 2),
+  col    = c(NA, NA, "blue"),
+  bg = "white",
+  cex = 1.2,
+  xpd = TRUE
+)
 
 #Regression between forest loss and year
 loss_reg <- loss_df %>%
@@ -156,4 +135,3 @@ qqline(residuals(fit_loss))
 
 #Shapiro wilk test
 shapiro.test(residuals(fit_loss))
-

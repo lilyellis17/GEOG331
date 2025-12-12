@@ -1,9 +1,6 @@
 library(dplyr)
-library(ggplot2)
 library(readxl)
-
 library(terra)
-library(tidyterra)
 
 f <- list.files("C:\\users\\lilye\\OneDrive\\Documents\\GEOG331\\FinalProject\\data",
                 full.names = TRUE)

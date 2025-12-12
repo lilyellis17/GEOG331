@@ -1,9 +1,7 @@
 #Load libraries
 library(dplyr)
-library(ggplot2)
 library(readxl)
 library(terra)
-library(tidyterra)
 
 #Load forest loss data
 f <- list.files("C:\\users\\lilye\\OneDrive\\Documents\\GEOG331\\FinalProject\\data", 
