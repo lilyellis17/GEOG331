@@ -71,7 +71,7 @@ loss_binary_2001_2019 <- classify(lossyear_crop, rbind(
 
 rivers <- vect("C:/users/lilye/OneDrive/Documents/GEOG331/FinalProject/data/rwdb_rivers/rwdb_riv.shp")
 crs(rivers) <- "EPSG:4326"
-rivers_crop_ll <- crop(rivers, yangambi_region) # both EPSG:4326
+rivers_crop_ll <- crop(rivers, yangambi_region)
 rivers_crop <- project(rivers_crop_ll, "EPSG:32635")
 
 loss_binary_utm <- project(loss_binary_2001_2019, "EPSG:32635", method = "near")
